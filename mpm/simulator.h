@@ -12,6 +12,7 @@ public:
     vec2 _v;
     mat22 _c;
     float _mass = 1;
+
 };
 
 class Cell {
@@ -26,12 +27,13 @@ class Simulator {
     float _grid_spacing;
     int _grid_size;
     int _num_particles;
-    float _dt = 1.f, _gravity = -0.05f;
+    float _dt = 1.f, _gravity = -0.5f;
 
 public:
     Simulator(int grid_size, int num_particles, float grid_spacing=1.f);
 
     void step();
+    void render(Mat<unsigned char>&);
 };
 
 #endif

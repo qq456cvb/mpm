@@ -1,13 +1,18 @@
 #include <iostream>
 #include <windows.h>
 #include <time.h>
+#include "simulator.h"
 using namespace std;
 
+static Simulator *simulator = nullptr;
+
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-void DrawPixels(HWND hwnd);
+void DrawPixels(HWND hwnd, BITMAPINFO *);
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     PWSTR lpCmdLine, int nCmdShow) {
+
+    if (!simulator) simulator = new Simulator(64, 256);
 
     MSG  msg;
     WNDCLASSW wc = { 0 };
@@ -24,6 +29,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         WS_OVERLAPPEDWINDOW | WS_VISIBLE,
         100, 100, 800, 800, NULL, NULL, hInstance, NULL);
 
+
     while (GetMessage(&msg, NULL, 0, 0)) {
 
         TranslateMessage(&msg);
@@ -38,11 +44,27 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg,
     WPARAM wParam, LPARAM lParam) {
 
+    BITMAPINFO bmi;
+    ZeroMemory(&bmi, sizeof(BITMAPINFO));
+    bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    bmi.bmiHeader.biPlanes = 1;
+    bmi.bmiHeader.biBitCount = 24;
+    bmi.bmiHeader.biCompression = BI_RGB;
+    bmi.bmiHeader.biWidth = 800;
+    bmi.bmiHeader.biHeight = 800;
+
     switch (msg) {
 
-    case WM_PAINT:
+    case WM_CREATE:
+        SetTimer(hwnd, 1, 100, NULL);
+        break;
 
-        DrawPixels(hwnd);
+    case WM_PAINT:
+        DrawPixels(hwnd, &bmi);
+        break;
+
+    case WM_TIMER:
+        InvalidateRect(hwnd, NULL, FALSE);
         break;
 
     case WM_DESTROY:
@@ -54,7 +76,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg,
     return DefWindowProcW(hwnd, msg, wParam, lParam);
 }
 
-void DrawPixels(HWND hwnd) {
+void DrawPixels(HWND hwnd, BITMAPINFO *bmi) {
 
     PAINTSTRUCT ps;
     RECT r;
@@ -68,12 +90,25 @@ void DrawPixels(HWND hwnd) {
 
     HDC hdc = BeginPaint(hwnd, &ps);
 
-    for (int i = 0; i < 1000; i++) {
+    simulator->step();
+    Mat<unsigned char> image(800 * 3, 800, fill::zeros);
+    simulator->render(image);
+
+    /*for (size_t x = 0; x < 800; x++) {
+        for (size_t y = 0; y < 800; y++) {
+            if (image(y, x) > 0) SetPixel(hdc, x, y, RGB(image(y, x), 0, 0));
+        }
+    }*/
+
+    SetDIBitsToDevice(hdc, 0, 0, image.n_rows / 3, image.n_cols, 0, 0, 0, image.n_cols, image.memptr(), bmi, DIB_RGB_COLORS);
+
+    /*for (int i = 0; i < 1000; i++) {
 
         int x = rand() % r.right;
         int y = rand() % r.bottom;
         SetPixel(hdc, x, y, RGB(255, 0, 0));
-    }
+    }*/
 
     EndPaint(hwnd, &ps);
+
 }
