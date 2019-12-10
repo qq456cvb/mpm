@@ -1,7 +1,11 @@
 #include <iostream>
 #include <windows.h>
 #include <time.h>
+#include <stdio.h>
 #include "simulator.h"
+#include "guicon.h"
+#include <crtdbg.h>
+
 using namespace std;
 
 static Simulator *simulator = nullptr;
@@ -12,7 +16,9 @@ void DrawPixels(HWND hwnd, BITMAPINFO *);
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     PWSTR lpCmdLine, int nCmdShow) {
 
-    if (!simulator) simulator = new Simulator(64, 256);
+    RedirectIOToConsole();
+
+    if (!simulator) simulator = new Simulator(64, 64 * 64, 1.f, 0.5f);
 
     MSG  msg;
     WNDCLASSW wc = { 0 };
@@ -27,7 +33,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     RegisterClassW(&wc);
     CreateWindowW(wc.lpszClassName, L"Pixels",
         WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-        100, 100, 800, 800, NULL, NULL, hInstance, NULL);
+        100, 100, 800, 820, NULL, NULL, hInstance, NULL);
 
 
     while (GetMessage(&msg, NULL, 0, 0)) {
@@ -56,7 +62,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg,
     switch (msg) {
 
     case WM_CREATE:
-        SetTimer(hwnd, 1, 100, NULL);
+        SetTimer(hwnd, 1, 1, NULL);
         break;
 
     case WM_PAINT:
